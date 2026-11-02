@@ -13,6 +13,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.util.List;
@@ -62,6 +63,22 @@ public class CartTest {
         assertEquals(6, cartPage.getItemsCount(), "В корзине должно быть 6 товаров");
         System.out.println("Тест выполнен");
 
+    }
+
+    @Test
+    public void testLoginWithLockedUser(){
+        loginPage.login("locked_out_user","secret_sauce");
+
+        String errorText = loginPage.getErrorText();
+        assertTrue(errorText.contains("locked out"),"Ожидали собщение про блокировку, а получили:" + errorText);
+    }
+
+    @Test
+    public void testWithUncorrectPassword(){
+        loginPage.login("standard_user","wrong_password");
+
+        String errorText = loginPage.getErrorText();
+        assertTrue(errorText.contains(" do not match"), "ожидали сообщение про ошибку пороля, получили:"+errorText);
     }
            @AfterEach
            public void tearDown(){
