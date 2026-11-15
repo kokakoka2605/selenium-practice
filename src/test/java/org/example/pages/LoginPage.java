@@ -1,5 +1,6 @@
 package org.example.pages;
 
+import org.example.config.Config;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -18,11 +19,11 @@ public class LoginPage {
 
     public LoginPage(WebDriver driver){
         this.driver = driver;
-        this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(Config.getInstance().getTimeoutSeconds()));
     }
 
     public void open(){
-        driver.get("https://www.saucedemo.com/");
+        driver.get(Config.getInstance().getBaseUrl());
     }
 
     public void login (String username, String password){
@@ -34,5 +35,4 @@ public class LoginPage {
     public String getErrorText(){
         return wait.until(ExpectedConditions.visibilityOfElementLocated(errorMessage)).getText();
     }
-
 }
