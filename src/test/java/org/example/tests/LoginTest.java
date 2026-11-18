@@ -1,75 +1,85 @@
 package org.example.tests;
-import org.example.factory.DriverFactory;
-import org.example.pages.CartPage;
-import org.example.pages.InventoryPage;
-import org.example.pages.LoginPage;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.support.ui.WebDriverWait;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class LoginTest {
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
+import org.example.base.BaseTest;
+import org.example.data.Users;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
-    WebDriver driver;
-    WebDriverWait wait;
-    LoginPage loginPage ;
-    InventoryPage inventoryPage;
-    CartPage cartPage;
+import static org.junit.jupiter.api.Assertions.*;
 
-    @BeforeEach
-    public void setUp()  {
-        driver = DriverFactory.createDriver("chrome");
-        driver.manage().window().maximize();
-        loginPage = new LoginPage(driver);
-        inventoryPage = new InventoryPage(driver);
-        cartPage = new CartPage(driver);
-        loginPage.open();
-    }
+@Epic("saucedemo")
+@Feature("Вход в систему")
+public class LoginTest extends BaseTest {
 
     @Test
-    public void testWithCorrectData(){
-        loginPage.login("standard_user", "secret_sauce");
+    @Tag("smoke")
+    @DisplayName("Вход с верными данными")
+    public void testWithCorrectData() {
+        loginPage.login(Users.STANDARD, Users.PASSWORD);
         assertTrue(inventoryPage.isCartVisible(), "После входа должен открыться каталог");
     }
 
     @Test
-    public void testWithoutPassword(){
-        loginPage.login("standard_user","");
-
-        String expectedError = "Epic sadface: Password is required";
-        String actualError = loginPage.getErrorText();
-        assertEquals(expectedError, actualError);
+    @Tag("regression")
+    @DisplayName("Вход без пароля")
+    public void testWithoutPassword() {
+        loginPage.login(Users.STANDARD, "");
+        assertEquals("Epic sadface: Password is required", loginPage.getErrorText());
     }
 
     @Test
-    public void testWithEmptyFields(){
-        loginPage.login("","");
-
-        String expectedError = "Epic sadface: Username is required";
-        String actualError = loginPage.getErrorText();
-        assertEquals(expectedError, actualError);
+    @Tag("regression")
+    @DisplayName("Вход с пустыми полями")
+    public void testWithEmptyFields() {
+        loginPage.login("", "");
+        assertEquals("Epic sadface: Username is required", loginPage.getErrorText());
     }
 
-    @Test
-    public void testLoginWithLockedUser(){
-        loginPage.login("locked_out_user","secret_sauce");
-
+   @Test
+   @Tag("regression")
+   @DisplayName("Вход с заблокированным пользователем")
+   public void testLoginWithLockedUser(){
+        loginPage.login(Users.LOCKED, Users.PASSWORD);
         String errorText = loginPage.getErrorText();
-        assertTrue(errorText.contains("locked out"),"Ожидали сообщение про блокировку, а получили:" + errorText);
-    }
+        assertTrue(errorText.contains("locked out"),"Ожидали сообщение про блокировку, а получили: " + errorText);
+   }
 
     @Test
+    @Tag("regression")
+    @DisplayName("Вход с неверным паролем")
     public void testWithUncorrectPassword(){
-        loginPage.login("standard_user","wrong_password");
-
+        loginPage.login(Users.STANDARD,"wrong_password");
         String errorText = loginPage.getErrorText();
-        assertTrue(errorText.contains("do not match"), "ожидали сообщение про ошибку пароля, получили:"+errorText);
+        assertTrue(errorText.contains("do not match"), "Ожидали сообщение про ошибку пароля, получили:"+errorText);
     }
 
-    @AfterEach
-    public void tearDown(){driver.quit();
+    @ParameterizedTest(name="Вход под {0} -> каталог открывается")
+    @CsvSource({"standard_user", "problem_user", "performance_glitch_user", "visual_user"})
+    @Tag("regression")
+    @DisplayName("Разные валидные пользователи могут войти")
+    public void testValidUsersCanLogin(String username) {
+        loginPage.login(username, Users.PASSWORD);
+        assertTrue(inventoryPage.isCartVisible(), "Каталог должен открыться для " + username);
+    }
+
+    @Test
+    @Tag("regression")
+    @DisplayName("Выход из системы возвращает на страницу логина")
+    public void testLogout(){
+        loginPage.login(Users.STANDARD, Users.PASSWORD);
+        inventoryPage.logout();
+        assertTrue(loginPage.isLoginButtonVisible(),"После выхода должна быть страница логина");
+    }
+
+    @Test
+    @Tag ("regression")
+    @DisplayName("Каталог недоступен без входа")
+    public void testInventoryNotAvailableWithoutLogin(){
+        loginPage.openPath("inventory.html");
+        String errorText = loginPage.getErrorText();
+        assertTrue(errorText.contains("only access '/inventory.html' when you are logged in"), "Получили:"+errorText);
     }
 }
