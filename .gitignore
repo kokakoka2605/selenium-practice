@@ -39,3 +39,6 @@ build/
 .DS_Store
 
 .idea/
+### Allure ###
+allure-results/
+allure-report/
